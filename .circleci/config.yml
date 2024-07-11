@@ -1,0 +1,22 @@
+version: 2.1
+
+jobs:
+  add-pr-comment:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Create PR Comment
+          command: |
+            ./scripts/create_pr_comment.sh
+
+workflows:
+  version: 2
+  pr_commenter:
+    jobs:
+      - add-pr-comment:
+          filters:
+            branches:
+              ignore: /.*/
+          requires:
