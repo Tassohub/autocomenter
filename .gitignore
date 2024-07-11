@@ -1,0 +1,2 @@
+# Ignore CircleCI configuration cache files if any
+.circleci/
