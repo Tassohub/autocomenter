@@ -6,24 +6,26 @@ if [ -z "$GH_TOKEN" ]; then
   exit 1
 fi
 
-# Ensure the required environment variables are available
-if [ -z "$PR_NUMBER" ] || [ -z "$REPO_NAME" ]; then
-  echo "Error: PR_NUMBER or REPO_NAME is not set."
+# Ensure the GitHub event data is available
+if [ ! -f "$GITHUB_EVENT_PATH" ]; then
+  echo "Error: GITHUB_EVENT_PATH is not set or file does not exist."
   exit 1
 fi
+
+# Extract PR number and repository name from the GitHub event data
+PR_NUMBER=$(jq --raw-output .number "$GITHUB_EVENT_PATH")
+REPO_NAME=$(jq --raw-output .repository.full_name "$GITHUB_EVENT_PATH")
 
 # Comment body
 COMMENT_BODY="This is an automated comment."
 
 # Create the PR comment
-response=$(curl -s -H "Authorization: token $GH_TOKEN" \
+curl -s -H "Authorization: token $GH_TOKEN" \
      -H "Accept: application/vnd.github.v3+json" \
      --data "{\"body\": \"$COMMENT_BODY\"}" \
-     "https://api.github.com/repos/$REPO_NAME/issues/$PR_NUMBER/comments")
+     "https://api.github.com/repos/$REPO_NAME/issues/$PR_NUMBER/comments" || {
+       echo "Error: Failed to create PR comment."
+       exit 1
+     }
 
-if echo "$response" | grep -q '"id":'; then
-  echo "Comment created successfully."
-else
-  echo "Error: Failed to create PR comment. Response: $response"
-  exit 1
-fi
+echo "Comment created successfully."
